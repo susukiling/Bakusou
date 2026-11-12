@@ -1,0 +1,97 @@
+<div id="app" style="position:absolute;inset:0">
+<section class="screen" id="sTitle">
+  <div class="road"><i></i></div>
+  <div class="tag">NATIONWIDE EDITION / 全国版</div>
+  <h1>爆走<br>キックボード</h1>
+  <p>地図から走る道を選んで、日本中の高速道路・有料道路・国道を爆走。車の間をすり抜けて、時間内にゴールをめざそう。</p>
+  <div class="row"><button class="btn" id="bStart">START</button><button class="btn ghost" id="bHow">遊び方</button></div>
+  <div class="how" id="how" hidden>
+    <b>操作</b><br>
+    ← → / A D：レーン移動　　Space / ↑：ジャンプ（ランプで高く跳ぶ）　　↓ / S：ブレーキ<br>
+    スマホ：画面の左半分・右半分をタップで移動、黄色いボタンでジャンプ<br>
+    ニアミスでLIMIT BREAKゲージが溜まり、満タンで数秒間「無敵＋加速」。ランプから着地を決めるとボーナス。
+  </div>
+  <small style="color:var(--mute)">ベスト <span id="tBest">0</span></small>
+</section>
+
+<section class="screen" id="sMode" hidden>
+  <div class="bar"><h2>モードを選ぶ</h2><button class="btn ghost" data-back="sTitle">戻る</button></div>
+  <div class="grid" id="modeGrid"></div>
+</section>
+
+<section class="screen" id="sMap" hidden>
+  <div class="bar"><h2>コースを選ぶ</h2><div class="row"><button class="btn ghost" data-back="sMode">戻る</button><button class="btn" id="bRoute" disabled>次へ</button></div></div>
+  <div class="main">
+    <div class="mapbox"><svg id="map" viewBox="0 0 330 470" preserveAspectRatio="xMidYMid meet" aria-label="日本地図"></svg></div>
+    <div class="side">
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-k="all">すべて</button>
+        <button class="tab" data-k="area">ストーリー</button>
+        <button class="tab" data-k="hw">高速道路</button>
+        <button class="tab" data-k="toll">有料道路</button>
+        <button class="tab" data-k="nat">国道</button>
+      </div>
+      <div class="list" id="rlist"></div>
+      <div class="detail" id="rdetail">地図の道路、または一覧からコースを選んでください。</div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="sOpt" hidden>
+  <div class="bar"><h2>乗り物を選ぶ</h2><div class="row"><button class="btn ghost" data-back="sMap">戻る</button><button class="btn" id="bGo">出発</button></div></div>
+  <div style="overflow:auto;display:flex;flex-direction:column;gap:12px;min-height:0">
+    <div class="detail" id="optRoute"></div>
+    <div class="lbl">乗り物</div>
+    <div class="opt" id="oVeh">
+      <button data-v="kick" class="on">キックボード（推奨）<small>小回りが利き、車の間をすり抜けやすい。周りは車が走る。</small></button>
+      <button data-v="car">車<small>車体が大きく当たりやすい。ライフが多め。</small></button>
+    </div>
+    <div class="lbl">カメラ視点</div>
+    <div class="opt" id="oCam">
+      <button data-v="std" class="on">標準<small>いつもの追いかけ視点。</small></button>
+      <button data-v="high">俯瞰<small>高い位置から見渡す。</small></button>
+      <button data-v="fp">一人称<small>低く、速く感じる。</small></button>
+    </div>
+    <div class="lbl">コース配置</div>
+    <div class="opt" id="oLay">
+      <button data-v="rand" class="on">ランダム<small>車や障害物が毎回ちがう配置。</small></button>
+      <button data-v="fix">固定<small>毎回同じ配置。ベスト更新向け。</small></button>
+    </div>
+    <div class="lbl">時間帯</div>
+    <div class="opt" id="oTime">
+      <button data-v="auto" class="on">コースおまかせ</button>
+      <button data-v="morning">朝</button><button data-v="day">昼</button><button data-v="night">夜</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="sGame" hidden>
+  <div id="gl"></div>
+  <div id="fx"></div>
+  <div class="hud">
+    <div class="hl">
+      <div class="sc"><small>SCORE</small><b id="hScore">0</b></div>
+      <div class="chip"><span class="jy" id="hJy">JY01</span><span>次は</span><b id="hNext">-</b><em id="hDist">0m</em><i id="hProg"></i></div>
+      <div class="tm"><small id="hTimeLbl">残り時間</small><b id="hTime">0.0</b><span id="hPen"></span></div>
+    </div>
+    <div class="hr">
+      <div class="ic"><button id="bSnd" aria-label="効果音">♪</button><button id="bBgm" aria-label="BGM">♫</button><button id="bPause" aria-label="一時停止">Ⅱ</button></div>
+      <div class="gauge"><svg viewBox="0 0 100 60"><path d="M10 52 A40 40 0 0 1 90 52" class="gb"/><path id="gArc" d="M10 52 A40 40 0 0 1 90 52" class="ga" pathLength="100" stroke-dasharray="0 100"/></svg><div class="gv"><b id="hSpd">0</b><small>km/h</small></div></div>
+      <div class="lim"><span id="hLim">LIMIT</span><div id="hSeg"></div></div>
+      <div class="cmb" id="hCombo"></div>
+    </div>
+  </div>
+  <div class="hearts" id="hLife"></div>
+  <div class="light" id="light"><i></i><i></i><i></i></div>
+  <div class="count" id="count"></div>
+  <div class="msg" id="msg"></div>
+  <div class="msg2" id="msg2"></div>
+  <div class="bigmsg" id="big"></div>
+  <div class="heart-b" id="hb">💔</div>
+  <div class="touch" id="touch"><button data-d="-1" aria-label="左へ"></button><button data-d="1" aria-label="右へ"></button></div>
+  <button class="jump" id="bJump">JUMP</button>
+  <div id="over"><h2 id="oTitle">GOAL!</h2><div class="res" id="oRes"></div>
+    <div class="row"><button class="btn" id="bAgain">もう一度</button><button class="btn ghost" id="bMapBack">コース選択へ</button></div></div>
+</section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
