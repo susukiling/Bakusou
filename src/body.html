@@ -78,6 +78,7 @@
       <div class="ic"><button id="bSnd" aria-label="効果音">♪</button><button id="bBgm" aria-label="BGM">♫</button><button id="bPause" aria-label="一時停止">Ⅱ</button></div>
       <div class="gauge"><svg viewBox="0 0 100 60"><path d="M10 52 A40 40 0 0 1 90 52" class="gb"/><path id="gArc" d="M10 52 A40 40 0 0 1 90 52" class="ga" pathLength="100" stroke-dasharray="0 100"/></svg><div class="gv"><b id="hSpd">0</b><small>km/h</small></div></div>
       <div class="lim"><span id="hLim">LIMIT</span><div id="hSeg"></div></div>
+      <div class="pill" id="hReady" hidden>満タン! ボタンで発動</div>
       <div class="cmb" id="hCombo"></div>
     </div>
   </div>
@@ -89,7 +90,7 @@
   <div class="bigmsg" id="big"></div>
   <div class="heart-b" id="hb">💔</div>
   <div class="touch" id="touch"><button data-d="-1" aria-label="左へ"></button><button data-d="1" aria-label="右へ"></button></div>
-  <button class="jump" id="bJump">JUMP</button>
+  <button class="lbtn" id="bLB" hidden aria-label="リミットブレイク発動">LIMIT<br>BREAK</button>
   <div id="over"><h2 id="oTitle">GOAL!</h2><div class="res" id="oRes"></div>
     <div class="row"><button class="btn" id="bAgain">もう一度</button><button class="btn ghost" id="bMapBack">コース選択へ</button></div></div>
 </section>

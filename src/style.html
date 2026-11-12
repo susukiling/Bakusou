@@ -122,8 +122,9 @@ h1,h2{font-family:var(--disp);font-weight:400;margin:0;line-height:1.1;text-wrap
 .touch{position:absolute;left:0;right:0;bottom:0;top:30%;display:none}
 .touch.on{display:flex}
 .touch button{flex:1;background:transparent;border:0;pointer-events:auto}
-.jump{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:max(24px,calc(env(safe-area-inset-bottom,0px) + 24px));display:none;width:76px;height:76px;border-radius:50%;background:#f6a52acc;color:#2a1500;font-weight:900;border:3px solid #fff;z-index:3;font-size:13px}
-.touch.on~.jump{display:block}
+.lbtn{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:max(24px,calc(env(safe-area-inset-bottom,0px) + 24px));width:86px;height:86px;border-radius:50%;border:3px solid #ffe3a0;background:radial-gradient(circle at 35% 30%,#ffb54a,#f08a14);color:#fff;font-weight:900;font-size:13px;line-height:1.15;letter-spacing:.04em;z-index:3;box-shadow:0 0 0 4px #f08a1455,0 6px 18px #0008;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.07)}}
+.pill{background:#2a3038e0;color:#ffb42e;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:900}
 #over{position:absolute;inset:0;background:#000b;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;z-index:5}
 #over.on{display:flex}
 #over h2{font-size:clamp(30px,8vw,56px);color:var(--lamp)}

@@ -133,8 +133,8 @@ function build(S){
     if(r<.34){const g=mkCar(rng,'car');e={m:g,k:'car',sp:14+rng()*22}}
     else if(r<.46){const g=mkCar(rng,'truck');e={m:g,k:'truck',sp:10+rng()*10}}
     else if(r<.66){const g=new THREE.Group();g.add(box(.7,.1,.7,0,0,.05,0,M('#222')));const c=new THREE.Mesh(new THREE.ConeGeometry(.3,.85,8),M('#ff6a1a'));c.position.y=.55;g.add(c);g.add(box(.36,.1,.36,0,0,.55,0,M('#fff')));g.userData={hw:.4,hl:.4,hh:.9};e={m:g,k:'cone'}}
-    else if(r<.76){const g=new THREE.Group();g.add(box(2.6,1,.3,0,0,.9,0,new THREE.MeshLambertMaterial({map:barTex})));g.add(box(.15,.9,.15,0,-1.1,.45,0,M('#333')));g.add(box(.15,.9,.15,0,1.1,.45,0,M('#333')));g.userData={hw:1.4,hl:.3,hh:1.4};e={m:g,k:'barrier'}}
-    else if(r<.9){const g=box(3,.4,4,0,0,.2,0,M('#ffd400'));g.rotation.x=.12;const w=new THREE.Group();w.add(g);w.userData={hw:1.5,hl:2,hh:0};e={m:w,k:'ramp'}}
+    else if(r<.76){const g=new THREE.Group(),bm=new THREE.MeshLambertMaterial({map:barTex});g.add(box(2.1,.55,.1,0,0,.85,0,bm));g.add(box(2.1,.2,.1,0,0,.45,0,bm));for(const sx of[-1,1]){const lg=box(.1,.95,.1,0,sx*.95,.45,0,M('#e8e8e8'));lg.rotation.x=.18;g.add(lg)}g.userData={hw:1.1,hl:.3,hh:1.3};e={m:g,k:'barrier'}}
+    else if(r<.9){const w=new THREE.Group(),g=box(3.2,.12,3.6,0,0,.28,0,new THREE.MeshLambertMaterial({map:barTex}));g.rotation.x=.16;w.add(g);w.add(box(3.2,.3,.12,0,0,.15,1.75,M('#ff7a1a')));w.userData={hw:1.6,hl:1.8,hh:0};e={m:w,k:'ramp'}}
     else if(rt.t==='nat'||rt.t==='area'){const g=new THREE.Group();g.add(box(.5,1.0,.35,0,0,.9,0,M('#2a3140')));g.add(box(.6,.7,.4,0,0,1.55,0,M(rng()<.5?'#e8423a':'#2b9be8')));g.add(new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),M('#f0c8a0'))).position.y=2.1;g.userData={hw:.4,hl:.4,hh:2};e={m:g,k:'ped',dir:rng()<.5?1:-1}}
     if(!e)continue;
     const u=e.m.userData;e.hw=u.hw;e.hl=u.hl;e.hh=u.hh;e.x=e.k==='cone'?lx+(rng()-.5)*.8:(e.k==='ped'?(rng()<.5?-7:7):lx);e.z=z;e.hit=false;e.passed=false;e.fly=0;
@@ -152,7 +152,7 @@ function start(S){
   scene=w.sc;camera=new THREE.PerspectiveCamera(65,1,.1,900);
   const pl=mkPlayer(S.veh);scene.add(pl);
   const t0=S.mode==='challenge'?Math.round(w.L/92)+(S.mode==='challenge'?4:0):0;
-  st={w,S,pl,pos:0,x:0,v:0,y:0,vy:0,air:0,flip:0,flipping:false,lives:total,max:total,score:0,t:0,time:t0,limit:0,lb:0,inv:0,combo:0,cd:3.6,cdn:4,cp:1,over:false,paused:false,flash:0,pen:0,steer:0,anim:0,shake:0,hit:0};
+  st={w,S,pl,pos:0,x:0,v:0,y:0,vy:0,air:0,flip:0,flipping:false,lives:total,max:total,score:0,t:0,time:t0,limit:0,lb:0,inv:0,combo:0,cd:3.6,cdn:4,cp:1,ready:false,over:false,paused:false,flash:0,pen:0,steer:0,anim:0,shake:0,hit:0};
   resize();
   $i('over').classList.remove('on');$i('bAgain').textContent='もう一度';
   $i('touch').classList.toggle('on',matchMedia('(pointer:coarse)').matches||'ontouchstart' in window);
@@ -186,7 +186,7 @@ function update(s,dt){
   if(Math.abs(s.x)>7.3){s.v-=dt*60*Math.sign(s.v);s.x=clamp(s.x,-8.2,8.2)}
   s.v=Math.max(0,s.v);s.pos+=s.v*dt;s.t+=dt;
   // jump / flip
-  if(KEY.j){KEY.j=0;if(s.y<=.01&&!s.fl){s.vy=9.5;s.air=0;s.fl=0}else if(s.y>.5&&!s.flipping){s.flipping=true;s.flip=0}}
+  if(KEY.j){KEY.j=0;activate(s)}
   if(s.y>0||s.vy>0){s.vy-=24*dt;s.y+=s.vy*dt;s.air+=dt;if(s.flipping)s.flip+=dt*Math.PI*5;
     if(s.y<=0){s.y=0;s.vy=0;const a=s.air;s.air=0;
       if(s.flipping){s.flipping=false;s.flip=0;const b=Math.round(900+a*1400);s.score+=b;s.limit=Math.min(12,s.limit+3);say('msg',`キックフリップ!<b>+${b.toLocaleString()}</b>`);beep(1200,.15,'triangle')}
@@ -199,7 +199,7 @@ function update(s,dt){
     if(e.fly>0){e.fly-=dt;e.z-=30*dt;e.x+=e.vx*dt;e.m.rotation.x+=dt*8;e.m.position.y+=dt*(e.fly>.5?14:-14);if(e.fly<=0)e.dead=true}
     e.m.position.x=e.x;e.m.position.z=e.z;if(e.fly<=0)e.m.position.y=0;
     const dz=Math.abs(e.z-pz),dx=Math.abs(e.x-s.x);
-    if(e.k==='ramp'){if(!e.used&&dz<2.2&&dx<1.9&&s.y<=.01){e.used=true;s.vy=14;s.air=0}continue}
+    if(e.k==='ramp'){if(!e.used&&dz<2.2&&dx<1.9&&s.y<=.01){e.used=true;s.vy=14;s.air=0;s.flipping=true;s.flip=0}continue}
     if(!e.hit&&e.fly===0&&dz<e.hl+.9&&dx<e.hw+.45&&s.y<e.hh){
       if(s.lb>0){e.hit=true;e.fly=.9;e.vx=(e.x>=s.x?1:-1)*14;s.score+=300;say('msg','ぶっとばし!<b>+300</b>');beep(200,.15,'sawtooth')}
       else if(s.inv<=0)crash(s,e)}
@@ -208,8 +208,8 @@ function update(s,dt){
         s.combo++;const b=Math.round(250*(1+Math.min(9,s.combo)*.55)+s.v*2);s.score+=b;if(s.lb<=0)s.limit=Math.min(12,s.limit+1);
         say('msg',`NEAR MISS<b>+${b.toLocaleString()}</b>`);beep(1500,.06,'triangle')}}
   }
-  if(s.lb>0){s.lb-=dt;if(s.lb<=0){s.lb=0;s.limit=0;$i('fx').classList.remove('on')}}
-  else if(s.limit>=12){s.lb=6;s.limit=12;$i('fx').classList.add('on');say('big','LIMIT BREAK');say('msg2','LIMIT 満タン!');beep(700,.3,'sawtooth')}
+  if(s.lb>0){s.lb-=dt;if(s.lb<=0){s.lb=0;s.limit=0;s.ready=false;$i('fx').classList.remove('on')}}
+  else if(s.limit>=12&&!s.ready){s.ready=true;s.limit=12;say('big','LIMIT 満タン');beep(700,.3,'sawtooth')}
   s.inv=Math.max(0,s.inv-dt);s.flash=Math.max(0,s.flash-dt);s.shake=Math.max(0,s.shake-dt);
   s.score+=s.v*dt*(s.lb>0?2:1)*.8;
   // stations / goal
@@ -220,6 +220,7 @@ function update(s,dt){
   if(s.S.mode==='survive'&&s.pos>=w.L-60){finish(s,true);return}
   if(s.S.mode==='challenge'){s.time-=dt;if(s.time<=0){s.time=0;finish(s,false)}}
 }
+function activate(s){if(!s||!s.ready||s.lb>0||s.over||s.cd>0)return;s.ready=false;s.lb=6;s.limit=12;$i('fx').classList.add('on');say('big','LIMIT BREAK');beep(900,.3,'sawtooth')}
 function crash(s,e){
   e.hit=true;s.combo=0;s.v*=.35;s.inv=1.6;s.flash=.4;s.shake=.35;s.limit=Math.max(0,s.limit-3);
   if(e.k==='cone'){e.fly=.8;e.vx=(e.x>=s.x?1:-1)*6}
@@ -269,6 +270,7 @@ function hud(s){
   const segs=$i('hSeg').children;for(let i=0;i<12;i++)segs[i].className=i<s.limit?'on':'';
   $i('hLim').textContent=s.lb>0?'LIMIT BREAK':'LIMIT';
   $i('hCombo').textContent=s.combo>1?'COMBO ×'+s.combo:'';
+  $i('bLB').hidden=!s.ready;$i('hReady').hidden=!s.ready;
   if(s.S.mode==='survive'){$i('hNext').textContent=w.rt.n;$i('hJy').textContent='SURV';$i('hDist').textContent=Math.round(s.pos)+'m';$i('hProg').style.width=clamp(s.pos/w.L,0,1)*100+'%'}
   else{const prevZ=idx>0?-w.gates[idx-1].z:0,span=Math.max(1,-g.z-prevZ);
     $i('hNext').textContent=g.s.n;$i('hJy').textContent=g.s.c||('GATE'+(idx+1));$i('hDist').textContent=Math.max(0,Math.round(-g.z-s.pos))+'m';$i('hProg').style.width=clamp((s.pos-prevZ)/span,0,1)*100+'%'}
@@ -278,10 +280,10 @@ function hud(s){
 }
 addEventListener('keydown',e=>{if(!st)return;const k=e.key;
   if(k==='ArrowLeft'||k==='a'||k==='A')KEY.l=1;else if(k==='ArrowRight'||k==='d'||k==='D')KEY.r=1;
-  else if(k===' '||k==='ArrowUp'||k==='w'||k==='W'){KEY.j=1;e.preventDefault()}
+  else if(k===' '||k==='Enter'||k==='l'||k==='L'){KEY.j=1;e.preventDefault()}
   else if(k==='ArrowDown'||k==='s'||k==='S')KEY.b=1;else if(k==='p'||k==='P'||k==='Escape')pause()});
 addEventListener('keyup',e=>{const k=e.key;if(k==='ArrowLeft'||k==='a'||k==='A')KEY.l=0;else if(k==='ArrowRight'||k==='d'||k==='D')KEY.r=0;else if(k==='ArrowDown'||k==='s'||k==='S')KEY.b=0});
 document.querySelectorAll('#touch button').forEach(b=>{b.addEventListener('pointerdown',e=>{touchDir=+b.dataset.d;e.preventDefault()});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>{touchDir=0}))});
-$i('bJump').addEventListener('pointerdown',e=>{KEY.j=1;e.preventDefault()});
+$i('bLB').addEventListener('pointerdown',e=>{KEY.j=1;e.preventDefault()});
 return {start,stop,pause,resize};
 })();
