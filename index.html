@@ -372,7 +372,7 @@ const hashS=str=>{let h=2166136261;for(const c of str){h^=c.charCodeAt(0);h=Math
 const PAL={
  morning:{sky:['#7aa6d8','#f6dfbd'],fog:'#ecdcc3',sun:1.0,amb:.75,night:0},
  day:{sky:['#3f86d8','#d3e8f8'],fog:'#d3e8f8',sun:1.15,amb:.8,night:0},
- night:{sky:['#040815','#26345f'],fog:'#101834',sun:.25,amb:.45,night:1}
+ night:{sky:['#060c1e','#2a3a68'],fog:'#16204a',sun:.55,amb:.95,night:1}
 };
 const LABEL={yamanote:'残り時間',senshu:'見送りまで',midosuji:'始業まで',minami:'予約まで',hanshinMid:'0時まで'};
 const KEY={l:0,r:0,b:0,j:0};let touchDir=0;
@@ -513,8 +513,8 @@ function addTrees(sc,trees,night,rng){
 }
 
 function cityScenery(sc,o){
-  const {Z0,L,night,rng,sts}=o,zEnd=-L-260,ISEC=150,ints=[];
-  for(let z=Z0-170;z>zEnd;z-=ISEC)ints.push(z);
+  const {Z0,L,night,rng,sts}=o,HW=!!o.hw,zEnd=-L-260,ISEC=150,ints=[];
+  if(!HW)for(let z=Z0-170;z>zEnd;z-=ISEC)ints.push(z);
   const inGap=(z0,z1)=>ints.some(c=>z1>c-10&&z0<c+10);
   const gapAt=z=>ints.find(c=>Math.abs(z-c)<10);
   // facades: 4 kinds, 1 shop, 1 plain
@@ -529,11 +529,11 @@ function cityScenery(sc,o){
       if(z-blockEnd<8){z=(nz===undefined?zEnd:nz-10)-0;if(nz===undefined)break;z=nz-10;continue}
       const w=Math.min(z-blockEnd,12+rng()*18),d=14+rng()*8,r=rng();
       const h=r<.18?12+rng()*12:r<.58?26+rng()*24:50+Math.pow(rng(),1.4)*70,kind=(rng()*4)|0,cz=z-w/2;
-      const dd=16.6+d/2;
+      const dd=16.6+d/2+(HW?30:0);
       addBox(FG[kind],s*dd,0,cz,d,h,w,1/6,1/14.4,tint());
       // shop strip + canopy
-      addBox(SG,s*15.6,0,cz,2.2,4.4,w-.4,1/4,1/4.4,night?[1,1,1]:[1,1,1]);
-      addBox(PG,s*14.2,4.5,cz,4.2,.28,w,1,1,rgb('#4a4d53'));
+      if(!HW){addBox(SG,s*15.6,0,cz,2.2,4.4,w-.4,1/4,1/4.4,[1,1,1]);
+      addBox(PG,s*14.2,4.5,cz,4.2,.28,w,1,1,rgb('#4a4d53'))}
       z-=w+.2+(rng()<.25?rng()*3:0);
     }
   }
@@ -542,7 +542,10 @@ function cityScenery(sc,o){
   {const t=shopTex(night),m=gMesh(SG,night?new THREE.MeshLambertMaterial({map:t,emissive:'#ffffff',emissiveMap:t}):new THREE.MeshLambertMaterial({map:t}));if(m)sc.add(m)}
   // sidewalks (broken at intersections) + curb + tactile line
   const pv=pavTex(),pg=newG(),curb=rgb(night?'#33363c':'#5a5e64'),yel=rgb('#e0b830');
-  for(const s of[-1,1]){let z=Z0+30;const segs=[...ints].sort((a,b)=>b-a);let a=z;
+  if(HW){const wl=rgb(night?'#4c5057':'#b9bec3'),cap=rgb(night?'#33363c':'#8f959b'),rl=rgb('#d8dde2'),zc=(Z0+zEnd)/2,ln=Z0-zEnd;
+    for(const s of[-1,1]){addBox(PG,s*9.4,0,zc,.5,3.8,ln,1,1,wl);addBox(PG,s*9.4,3.8,zc,.9,.25,ln,1,1,cap);addBox(PG,s*8.0,.7,zc,.14,.28,ln,1,1,rl);addBox(PG,s*8.0,.25,zc,.14,.28,ln,1,1,rl);addBox(PG,s*7.7,0,zc,.3,.18,ln,1,1,yel);
+      for(let z=Z0;z>zEnd;z-=24)addBox(PG,s*9.7,0,z,.9,7.5,.9,1,1,cap)}}
+  else for(const s of[-1,1]){let z=Z0+30;const segs=[...ints].sort((a,b)=>b-a);let a=z;
     for(const c of segs.concat([zEnd])){const b=c===zEnd?zEnd:c+10;if(a-b>2){
       addBox(pg,s*11,0,(a+b)/2,6,.2,a-b,1/1.5,1/1.5,night?[.45,.45,.47]:[1,1,1]);
       addBox(PG,s*7.95,0,(a+b)/2,.5,.22,a-b,1,1,curb);addBox(PG,s*8.7,.2,(a+b)/2,.28,.03,a-b,1,1,yel)}
@@ -568,17 +571,17 @@ function cityScenery(sc,o){
   {const m=gMesh(PG,new THREE.MeshLambertMaterial({vertexColors:true}));if(m)sc.add(m)}
   // road numerals & green notice signs & speed signs
   const nm=new THREE.MeshBasicMaterial({map:roadNum(),transparent:true,opacity:night?.55:.9}),npl=new THREE.PlaneGeometry(1.7,1.3);
-  for(let z=Z0-60;z>-L-100;z-=140){if(gapAt(z)||gapAt(z-12))continue;const q=new THREE.Mesh(npl,nm);q.rotation.x=-Math.PI/2;q.position.set(rng()<.5?-2.7:2.7,.03,z);sc.add(q)}
+  if(!HW)for(let z=Z0-60;z>-L-100;z-=140){if(gapAt(z)||gapAt(z-12))continue;const q=new THREE.Mesh(npl,nm);q.rotation.x=-Math.PI/2;q.position.set(rng()<.5?-2.7:2.7,.03,z);sc.add(q)}
   const g1=new THREE.PlaneGeometry(4.6,2.3),spl=new THREE.CircleGeometry(.5,16),sg1=new THREE.MeshBasicMaterial({map:greenSign('工事中')}),sg2=new THREE.MeshBasicMaterial({map:limitSign(50)}),sg3=new THREE.MeshBasicMaterial({map:limitSign(30)});
   const sf=new THREE.MeshLambertMaterial({color:'#7d858c'});
-  for(let z=Z0-90,i=0;z>-L-100;z-=110,i++){if(gapAt(z))continue;const s=i%2?1:-1;
+  if(!HW)for(let z=Z0-90,i=0;z>-L-100;z-=110,i++){if(gapAt(z))continue;const s=i%2?1:-1;
     if(i%3===0){const m=new THREE.Mesh(g1,sg1);m.position.set(s*13.6,1.9,z);m.rotation.y=-s*.35;sc.add(m)}
     else{const p=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,2.8,6),sf);p.position.set(s*8.2,1.4,z);sc.add(p);const m=new THREE.Mesh(spl,i%2?sg2:sg3);m.position.set(s*8.2,2.9,z+.05);m.rotation.y=Math.PI;sc.add(m)}}
   // trees: dark blobby crowns on black tree pits
-  const trees=[];for(const s of[-1,1])for(let z=Z0-20-(s>0?8:0);z>zEnd;z-=16){if(gapAt(z)||gapAt(z-3)||gapAt(z+3))continue;trees.push({x:s*9.7,z,k:.9+rng()*.35,a:rng()*6})}
+  const trees=[];if(!HW)for(const s of[-1,1])for(let z=Z0-20-(s>0?8:0);z>zEnd;z-=16){if(gapAt(z)||gapAt(z-3)||gapAt(z+3))continue;trees.push({x:s*9.7,z,k:.9+rng()*.35,a:rng()*6})}
   addTrees(sc,trees,night,rng);
   // pedestrians (dark suits, some in color) and vending machines
-  const peds=[];for(const s of[-1,1])for(let z=Z0-10;z>zEnd;z-=5+rng()*9){if(gapAt(z))continue;peds.push({x:s*(9+rng()*4.2),z,c:rng()})}
+  const peds=[];if(!HW)for(const s of[-1,1])for(let z=Z0-10;z>zEnd;z-=5+rng()*9){if(gapAt(z))continue;peds.push({x:s*(9+rng()*4.2),z,c:rng()})}
   if(peds.length){const n=peds.length,Gl=new THREE.BoxGeometry(.34,.85,.26),Gb=new THREE.BoxGeometry(.5,.75,.3),Gh=new THREE.BoxGeometry(.24,.26,.24),
     il=new THREE.InstancedMesh(Gl,M('#23262e'),n),ib=new THREE.InstancedMesh(Gb,M('#ffffff'),n),ih=new THREE.InstancedMesh(Gh,M('#e8c4a0'),n),O=new THREE.Object3D(),col=new THREE.Color();
     const sh=['#2a3550','#3a3d44','#f1f1ee','#c8323a','#5a6a86','#2b2f38'];
@@ -586,7 +589,7 @@ function cityScenery(sc,o){
       O.position.set(p.x,1.45,p.z);O.updateMatrix();ib.setMatrixAt(i,O.matrix);col.set(sh[(p.c*sh.length)|0]);ib.setColorAt(i,col);
       O.position.set(p.x,2.06,p.z);O.updateMatrix();ih.setMatrixAt(i,O.matrix)});
     sc.add(il,ib,ih)}
-  for(let z=Z0-50;z>-L-100;z-=55+rng()*40){if(gapAt(z))continue;const s=rng()<.5?-1:1,vm=box(.8,1.9,.7,0,s*13.4,.95,z,M(['#e8eef2','#2f6fb5','#d23c32'][(rng()*3)|0]));sc.add(vm)}
+  if(!HW)for(let z=Z0-50;z>-L-100;z-=55+rng()*40){if(gapAt(z))continue;const s=rng()<.5?-1:1,vm=box(.8,1.9,.7,0,s*13.4,.95,z,M(['#e8eef2','#2f6fb5','#d23c32'][(rng()*3)|0]));sc.add(vm)}
 }
 
 
@@ -611,6 +614,18 @@ function addSegment(sc,kind,z0,len,night,rng){
   else if(kind==='dirsign'){const m=new THREE.Mesh(new THREE.PlaneGeometry(6,2.4),new THREE.MeshBasicMaterial({map:dirSignTex()}));m.position.set(-4.5,6.2,z0);sc.add(m);sc.add(box(.2,6.2,.2,0,-8.2,3.1,z0,M('#7d858c')));sc.add(box(4,.2,.2,0,-6.2,6.3,z0,M('#7d858c')))}
 }
 
+function addHills(sc,o){
+  const {Z0,L,night,rng,th}=o,n=Math.ceil((L+500)/60)*2,O=new THREE.Object3D();
+  const hm=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1,7),new THREE.MeshLambertMaterial({color:'#ffffff',flatShading:true}),n),col=new THREE.Color();
+  let i=0;for(const s of[-1,1])for(let z=Z0+100;z>-L-420&&i<n;z-=60){const big=th==='mtn',r=(big?60+rng()*70:30+rng()*30),h=big?(50+rng()*90):(8+rng()*14);
+    O.position.set(s*(big?(55+rng()*80):(70+rng()*80)),h/2-1,z-rng()*40);O.scale.set(r,h,r);O.rotation.set(0,rng()*6,0);O.updateMatrix();hm.setMatrixAt(i,O.matrix);
+    col.setHSL(.27+rng()*.08,.25+rng()*.2,(night?.1:.28)+rng()*.12);hm.setColorAt(i,col);i++}
+  hm.count=i;sc.add(hm)}
+function addGuardrail(sc,o){
+  const {Z0,L,night}=o,zc=(Z0-L-420)/2,ln=Z0+L+420,rl=M(night?'#8a9096':'#e4e8ec'),pm=M(night?'#4a4e54':'#8f959b'),n=Math.ceil(ln/8)*2,pst=new THREE.InstancedMesh(new THREE.BoxGeometry(.14,.9,.14),pm,n),O=new THREE.Object3D();let i=0;
+  for(const s of[-1,1]){sc.add(box(.1,.3,ln,0,s*8.2,.75,zc,rl));sc.add(box(.1,.25,ln,0,s*8.2,.35,zc,rl));for(let z=Z0;z>-L-420;z-=8){O.position.set(s*8.3,.45,z);O.updateMatrix();pst.setMatrixAt(i++,O.matrix)}}
+  pst.count=i;sc.add(pst)}
+
 function build(S){
   const rt=S.route,rng=rngMk(S.lay==='fix'?hashS(rt.id):((Math.random()*1e9)|0)+1);
   const tm=S.time==='auto'?rt.tm:S.time,pal=PAL[tm],night=pal.night,th=rt.th;
@@ -622,7 +637,7 @@ function build(S){
   const dl=new THREE.DirectionalLight(night?'#aab8ff':'#fff2dd',pal.sun);dl.position.set(-30,60,20);sc.add(dl);
   const Z0=60,len=L+520,mid=-(L)/2+Z0/2-100;
   const road=new THREE.Mesh(new THREE.PlaneGeometry(16,len),(()=>{const t=asphaltTex(rng);t.repeat.set(3,len/12);return new THREE.MeshLambertMaterial({map:t,color:night?'#8a8d94':'#ffffff'})})());road.rotation.x=-Math.PI/2;road.position.set(0,0,mid);sc.add(road);
-  const gcol=th==='sea'||th==='bay'?(night?'#0a2548':'#2a86c0'):th==='mtn'||th==='plain'?(night?'#0b2418':'#5a9a52'):(night?'#14171d':'#9a9ea4');
+  const gcol=th==='sea'||th==='bay'?(night?'#0a2548':'#2a86c0'):th==='mtn'||th==='plain'?(night?'#17402a':'#5a9a52'):(night?'#14171d':'#9a9ea4');
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(900,len),M(gcol));ground.rotation.x=-Math.PI/2;ground.position.set(0,th==='sea'||th==='bay'?-3:-.15,mid);sc.add(ground);
   for(const s of(th==='city'?[]:[-1,1])){
     sc.add(box(6,.2,len,0,s*11,.1,mid,M(night?'#4a4c52':'#d2ccbf')));
@@ -670,7 +685,9 @@ function build(S){
       for(let q=0;q<cl;q+=14)for(const s2 of[-1,1])sg.add(box(.6,7,.6,0,s2*8.6,3.5,z-q-4,M('#9aa0a6')));
       for(let q=0;q<cl;q+=10){const lt=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.4),new THREE.MeshBasicMaterial({color:'#fff7d0'}));lt.rotation.x=Math.PI/2;lt.position.set(0,6.68,z-q-4);sg.add(lt)}}
     gates.push({z,s,k})});
-  if(th==='city')cityScenery(sc,{Z0,L,night,rng,sts});
+  if(th==='mtn'||th==='plain')addHills(sc,{Z0,L,night,rng,th});
+  if(th!=='city'&&th!=='sea'&&th!=='bay'&&(rt.t==='hw'||rt.t==='toll'||th==='mtn'))addGuardrail(sc,{Z0,L,night});
+  if(th==='city')cityScenery(sc,{Z0,L,night,rng,sts,hw:rt.t==='hw'||rt.t==='toll'});
   if(th==='city'){
     if(rt.id==='yamanote'){const gz=k=>-gdist(k);
       addSegment(sc,'truss',gz(3)-20,130,night,rng);addSegment(sc,'hall',gz(5)-30,150,night,rng);addSegment(sc,'hall',gz(6)-20,170,night,rng);addSegment(sc,'hedge',gz(8)-20,130,night,rng)}
