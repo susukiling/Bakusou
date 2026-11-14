@@ -228,7 +228,9 @@ function cityScenery(sc,o){
 
 
 function goldTex(){return cvTex(128,128,(g,w,h)=>{g.fillStyle='#e9dcc0';g.fillRect(0,0,w,h);g.strokeStyle='#c9a04a';g.lineWidth=6;for(let i=0;i<=w;i+=32){g.beginPath();g.moveTo(i,0);g.lineTo(i,h);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(w,i);g.stroke()}})}
-function dirSignTex(){return cvTex(512,200,(g,w,h)=>{g.fillStyle='#1b57b8';g.beginPath();g.roundRect(0,0,w,h,16);g.fill();g.strokeStyle='#fff';g.lineWidth=6;g.strokeRect(10,10,w-20,h-20);g.fillStyle='#fff';g.font='900 54px "Noto Sans JP",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('大手町',130,60);g.fillText('日本橋',390,60);g.font='900 70px sans-serif';g.fillText('←',130,140);g.fillText('↑',260,140);g.fillText('→',390,140)})}
+let DIRGREEN=false;
+/* Japan: expressway/toll guide signs are green, ordinary roads/national routes are blue */
+function dirSignTex(){return cvTex(512,200,(g,w,h)=>{g.fillStyle=DIRGREEN?'#0f7a4a':'#1b57b8';g.beginPath();g.roundRect(0,0,w,h,16);g.fill();g.strokeStyle='#fff';g.lineWidth=6;g.strokeRect(10,10,w-20,h-20);g.fillStyle='#fff';g.font='900 54px "Noto Sans JP",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('大手町',130,60);g.fillText('日本橋',390,60);g.font='900 70px sans-serif';g.fillText('←',130,140);g.fillText('↑',260,140);g.fillText('→',390,140)})}
 function addSegment(sc,kind,z0,len,night,rng){
   const dk=night?.4:1,z1=z0-len;
   if(kind==='truss'){const col=night?'#16505a':'#1f8a9a',mt=M(col);
@@ -330,11 +332,12 @@ function build(S){
     gates.push({z,s,k})});
   if(th==='mtn'||th==='plain')addHills(sc,{Z0,L,night,rng,th});
   if(th!=='city'&&th!=='sea'&&th!=='bay'&&(rt.t==='hw'||rt.t==='toll'||th==='mtn'))addGuardrail(sc,{Z0,L,night});
-  if(th==='city')cityScenery(sc,{Z0,L,night,rng,sts,hw:rt.t==='hw'||rt.t==='toll'});
+  if(th==='city')cityScenery(sc,{Z0,L,night,rng,sts,hw:rt.t==='hw'||rt.t==='toll'||['shutoNight','shutoMid','hanshinMid'].includes(rt.id)});
   if(th==='city'){
     if(rt.id==='yamanote'){const gz=k=>-gdist(k);
       addSegment(sc,'truss',gz(3)-20,130,night,rng);addSegment(sc,'hall',gz(5)-30,150,night,rng);addSegment(sc,'hall',gz(6)-20,170,night,rng);addSegment(sc,'hedge',gz(8)-20,130,night,rng)}
     else if(rt.id==='midosuji'||rt.id==='minami'||rt.id==='shutoNight'||rt.id==='shutoMid'){addSegment(sc,'hall',-gdist(1)-30,140,night,rng)}
+    DIRGREEN=rt.t==='hw'||rt.t==='toll'||rt.id==='shutoMid'||rt.id==='shutoNight'||rt.id==='hanshinMid';
     for(let z=-300;z>-L+100;z-=360)addSegment(sc,'dirsign',z,0,night,rng)}
   // obstacles
   const ents=[],lanes=[-3.6,0,3.6],dd=[1.7,1.35,1.05,.85][rt.d-1];
