@@ -40,6 +40,24 @@ function limitSign(n){return cvTex(128,128,(g,w,h)=>{g.fillStyle='#fff';g.beginP
 function greenSign(t){return cvTex(256,128,(g,w,h)=>{g.fillStyle='#1f7a45';g.fillRect(0,0,w,h);g.strokeStyle='#fff';g.lineWidth=6;g.strokeRect(8,8,w-16,h-16);g.fillStyle='#fff';g.font='900 48px "Noto Sans JP",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,w/2,h/2)})}
 function roadNum(){return cvTex(128,96,(g,w,h)=>{g.fillStyle='#e8e8e2';g.font='900 80px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('50',64,52)})}
 
+
+function leafTex(rng){return cvTex(128,128,(g,w,h)=>{g.fillStyle='#3a6a2c';g.fillRect(0,0,w,h);
+  const cs=['#2c5524','#4a7a2e','#66802a','#244a20','#557f32','#34612a'];
+  for(let i=0;i<150;i++){g.fillStyle=cs[(rng()*cs.length)|0];g.globalAlpha=.75;g.beginPath();const x=rng()*w,y=rng()*h,r=6+rng()*16;g.moveTo(x,y);g.lineTo(x+r,y+rng()*r);g.lineTo(x+rng()*r,y+r);g.closePath();g.fill()}g.globalAlpha=1})}
+function addTrees(sc,trees,night,rng){
+  const n=trees.length;if(!n)return;
+  const tr=new THREE.InstancedMesh(new THREE.CylinderGeometry(.24,.34,3.6,6),M('#3a2a1c'),n),
+    pit=new THREE.InstancedMesh(new THREE.BoxGeometry(1.3,.05,1.3),M('#101113'),n),
+    lt=leafTex(rng),O=new THREE.Object3D(),col=new THREE.Color(),
+    offs=[[0,4.3,0,1.9],[.95,5.5,.3,1.4],[-.95,5.1,-.2,1.5],[.45,3.3,.95,1.35],[-.65,3.4,-.85,1.45]],
+    cr=offs.map(()=>new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),new THREE.MeshLambertMaterial({map:lt,color:'#ffffff',flatShading:true}),n));
+  trees.forEach((t,i)=>{O.rotation.set(0,0,0);O.scale.set(t.k,t.k,t.k);O.position.set(t.x,1.8*t.k,t.z);O.updateMatrix();tr.setMatrixAt(i,O.matrix);
+    O.scale.set(1,1,1);O.position.set(t.x,.22,t.z);O.updateMatrix();pit.setMatrixAt(i,O.matrix);
+    offs.forEach((f,j)=>{const r=f[3]*t.k;O.position.set(t.x+f[0]*t.k,f[1]*t.k,t.z+f[2]*t.k);O.scale.set(r,r*.85,r);O.rotation.set(t.a+j,t.a*2+j*1.3,j);O.updateMatrix();cr[j].setMatrixAt(i,O.matrix);
+      col.setHSL(.22+rng()*.1,.3+rng()*.2,(night?.28:.78)+rng()*.22);cr[j].setColorAt(i,col)})});
+  sc.add(tr,pit);cr.forEach(m=>sc.add(m));
+}
+
 function cityScenery(sc,o){
   const {Z0,L,night,rng,sts}=o,zEnd=-L-260,ISEC=150,ints=[];
   for(let z=Z0-70;z>zEnd;z-=ISEC)ints.push(z);
@@ -103,16 +121,8 @@ function cityScenery(sc,o){
     if(i%3===0){const m=new THREE.Mesh(g1,sg1);m.position.set(s*13.6,1.9,z);m.rotation.y=-s*.35;sc.add(m)}
     else{const p=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,2.8,6),sf);p.position.set(s*8.2,1.4,z);sc.add(p);const m=new THREE.Mesh(spl,i%2?sg2:sg3);m.position.set(s*8.2,2.9,z+.05);m.rotation.y=Math.PI;sc.add(m)}}
   // trees: dark blobby crowns on black tree pits
-  const trees=[];for(const s of[-1,1])for(let z=Z0-20-(s>0?8:0);z>zEnd;z-=16){if(gapAt(z)||gapAt(z-3)||gapAt(z+3))continue;trees.push({x:s*9.7,z,k:.85+rng()*.4,a:rng()*6})}
-  if(trees.length){const n=trees.length,tr=new THREE.InstancedMesh(new THREE.CylinderGeometry(.14,.2,3,6),M('#3f2c1c'),n),
-    pit=new THREE.InstancedMesh(new THREE.BoxGeometry(1.1,.04,1.1),M('#16171a'),n),
-    cr=[0,1,2].map(()=>new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshLambertMaterial({color:'#ffffff',flatShading:true}),n)),O=new THREE.Object3D(),col=new THREE.Color();
-    const offs=[[0,3.9,0,1.55],[.55,5.2,.2,1.1],[-.55,3.0,.35,1.25]];
-    trees.forEach((t,i)=>{O.position.set(t.x,1.5*t.k,t.z);O.scale.set(t.k,t.k,t.k);O.rotation.set(0,0,0);O.updateMatrix();tr.setMatrixAt(i,O.matrix);
-      O.position.set(t.x,.22,t.z);O.scale.set(1,1,1);O.updateMatrix();pit.setMatrixAt(i,O.matrix);
-      offs.forEach((f,j)=>{O.position.set(t.x+f[0]*t.k,f[1]*t.k,t.z+f[2]*t.k);O.scale.set(f[3]*t.k,f[3]*t.k*.9,f[3]*t.k);O.rotation.set(t.a,t.a*2,0);O.updateMatrix();cr[j].setMatrixAt(i,O.matrix);
-        col.setHSL(.27+rng()*.06,.45+rng()*.15,(night?.12:.26)+rng()*.1);cr[j].setColorAt(i,col)})});
-    sc.add(tr,pit,cr[0],cr[1],cr[2])}
+  const trees=[];for(const s of[-1,1])for(let z=Z0-20-(s>0?8:0);z>zEnd;z-=16){if(gapAt(z)||gapAt(z-3)||gapAt(z+3))continue;trees.push({x:s*9.7,z,k:.9+rng()*.35,a:rng()*6})}
+  addTrees(sc,trees,night,rng);
   // pedestrians (dark suits, some in color) and vending machines
   const peds=[];for(const s of[-1,1])for(let z=Z0-10;z>zEnd;z-=5+rng()*9){if(gapAt(z))continue;peds.push({x:s*(9+rng()*4.2),z,c:rng()})}
   if(peds.length){const n=peds.length,Gl=new THREE.BoxGeometry(.34,.85,.26),Gb=new THREE.BoxGeometry(.5,.75,.3),Gh=new THREE.BoxGeometry(.24,.26,.24),

@@ -77,7 +77,7 @@ const LAND=[ // simplified outlines (lon,lat)
 const store={get(k,d){try{const v=localStorage.getItem('bk_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('bk_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- ui state ---------- */
-const S={mode:'challenge',route:null,veh:'kick',cam:'std',lay:'rand',time:'auto',tab:'all'};
+const S={mode:'challenge',route:null,veh:'kick',skin:'std',cam:'std',lay:'rand',time:'auto',tab:'all'};
 function show(id){$$('.screen').forEach(s=>s.hidden=s.id!==id);if(id!=='sGame')Game.stop()}
 $$('[data-back]').forEach(b=>b.onclick=()=>show(b.dataset.back));
 $('#bStart').onclick=()=>show('sMode');
@@ -113,7 +113,7 @@ function paintSel(){
   const on=$('.rt.on');if(on)on.parentNode.appendChild(on);
 }
 $('#bRoute').onclick=()=>{const r=S.route;$('#optRoute').innerHTML=`<span class="badge ${r.t}">${TYPE[r.t]}</span> <b>${r.n}</b>　${r.s}`;show('sOpt')};
-[['#oVeh','veh'],['#oCam','cam'],['#oLay','lay'],['#oTime','time']].forEach(([sel,k])=>$$(sel+' button').forEach(b=>b.onclick=()=>{$$(sel+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');S[k]=b.dataset.v}));
+[['#oSkin','skin'],['#oVeh','veh'],['#oCam','cam'],['#oLay','lay'],['#oTime','time']].forEach(([sel,k])=>$$(sel+' button').forEach(b=>b.onclick=()=>{$$(sel+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');S[k]=b.dataset.v}));
 $('#bGo').onclick=()=>{show('sGame');Game.start(S)};
 $('#bAgain').onclick=()=>{$('#over').classList.remove('on');Game.start(S)};
 $('#bMapBack').onclick=()=>{show('sMap');drawMap()};
