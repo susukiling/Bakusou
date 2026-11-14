@@ -223,6 +223,28 @@ function cityScenery(sc,o){
   for(let z=Z0-50;z>-L-100;z-=55+rng()*40){if(gapAt(z))continue;const s=rng()<.5?-1:1,vm=box(.8,1.9,.7,0,s*13.4,.95,z,M(['#e8eef2','#2f6fb5','#d23c32'][(rng()*3)|0]));sc.add(vm)}
 }
 
+
+function goldTex(){return cvTex(128,128,(g,w,h)=>{g.fillStyle='#e9dcc0';g.fillRect(0,0,w,h);g.strokeStyle='#c9a04a';g.lineWidth=6;for(let i=0;i<=w;i+=32){g.beginPath();g.moveTo(i,0);g.lineTo(i,h);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(w,i);g.stroke()}})}
+function dirSignTex(){return cvTex(512,200,(g,w,h)=>{g.fillStyle='#1b57b8';g.beginPath();g.roundRect(0,0,w,h,16);g.fill();g.strokeStyle='#fff';g.lineWidth=6;g.strokeRect(10,10,w-20,h-20);g.fillStyle='#fff';g.font='900 54px "Noto Sans JP",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('大手町',130,60);g.fillText('日本橋',390,60);g.font='900 70px sans-serif';g.fillText('←',130,140);g.fillText('↑',260,140);g.fillText('→',390,140)})}
+function addSegment(sc,kind,z0,len,night,rng){
+  const dk=night?.4:1,z1=z0-len;
+  if(kind==='truss'){const col=night?'#16505a':'#1f8a9a',mt=M(col);
+    for(let z=z0;z>z1;z-=12){for(const s of[-1,1]){sc.add(box(.5,13,.5,0,s*8.8,6.5,z,mt));const dg=box(.4,15,.4,0,s*8.8,6.5,z-6,mt);dg.rotation.x=s>0?.45:-.45;sc.add(dg)}sc.add(box(18.4,.6,.6,0,0,13,z,mt))}
+    for(const s of[-1,1])sc.add(box(.6,.6,len,0,s*8.8,13,(z0+z1)/2,mt))}
+  else if(kind==='hall'){ // gold-grid ceiling over a covered section
+    const gt=goldTex();gt.wrapS=gt.wrapT=THREE.RepeatWrapping;gt.repeat.set(len/6,3);
+    const ce=new THREE.Mesh(new THREE.BoxGeometry(18.4,.4,len),new THREE.MeshLambertMaterial({map:gt,color:night?'#7a7a80':'#ffffff'}));ce.position.set(0,8.2,(z0+z1)/2);sc.add(ce);
+    for(const s of[-1,1])sc.add(box(.6,8.2,len,0,s*9,4.1,(z0+z1)/2,M(night?'#4a4e54':'#9aa3ab')))}
+  else if(kind==='hedge'){ // green hedge walls, brown ceiling with white round lights
+    const lt=leafTex(rng);lt.wrapS=lt.wrapT=THREE.RepeatWrapping;lt.repeat.set(len/8,1.5);
+    for(const s of[-1,1]){const w=new THREE.Mesh(new THREE.BoxGeometry(.8,9,len),new THREE.MeshLambertMaterial({map:lt,color:night?'#8aa088':'#ffffff'}));w.position.set(s*9,4.5,(z0+z1)/2);w.rotation.z=-s*.12;sc.add(w)}
+    sc.add(box(19,.4,len,0,0,8.6,(z0+z1)/2,M(night?'#2a1a10':'#4a2c1c')));
+    const n=Math.floor(len/6),li=new THREE.InstancedMesh(new THREE.CircleGeometry(.5,12),new THREE.MeshBasicMaterial({color:'#ffffff'}),n*5),O=new THREE.Object3D();let i=0;
+    for(let q=0;q<n;q++)for(let k=0;k<5;k++){O.position.set(-6+k*3,8.38,z0-q*6);O.rotation.set(Math.PI/2,0,0);O.updateMatrix();li.setMatrixAt(i++,O.matrix)}
+    sc.add(li)}
+  else if(kind==='dirsign'){const m=new THREE.Mesh(new THREE.PlaneGeometry(6,2.4),new THREE.MeshBasicMaterial({map:dirSignTex()}));m.position.set(-4.5,6.2,z0);sc.add(m);sc.add(box(.2,6.2,.2,0,-8.2,3.1,z0,M('#7d858c')));sc.add(box(4,.2,.2,0,-6.2,6.3,z0,M('#7d858c')))}
+}
+
 function build(S){
   const rt=S.route,rng=rngMk(S.lay==='fix'?hashS(rt.id):((Math.random()*1e9)|0)+1);
   const tm=S.time==='auto'?rt.tm:S.time,pal=PAL[tm],night=pal.night,th=rt.th;
@@ -283,6 +305,11 @@ function build(S){
       for(let q=0;q<cl;q+=10){const lt=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.4),new THREE.MeshBasicMaterial({color:'#fff7d0'}));lt.rotation.x=Math.PI/2;lt.position.set(0,6.68,z-q-4);sg.add(lt)}}
     gates.push({z,s,k})});
   if(th==='city')cityScenery(sc,{Z0,L,night,rng,sts});
+  if(th==='city'){
+    if(rt.id==='yamanote'){const gz=k=>-gdist(k);
+      addSegment(sc,'truss',gz(3)-20,130,night,rng);addSegment(sc,'hall',gz(5)-30,150,night,rng);addSegment(sc,'hall',gz(6)-20,170,night,rng);addSegment(sc,'hedge',gz(8)-20,130,night,rng)}
+    else if(rt.id==='midosuji'||rt.id==='minami'||rt.id==='shutoNight'||rt.id==='shutoMid'){addSegment(sc,'hall',-gdist(1)-30,140,night,rng)}
+    for(let z=-300;z>-L+100;z-=360)addSegment(sc,'dirsign',z,0,night,rng)}
   // obstacles
   const ents=[],lanes=[-3.6,0,3.6],dd=[1.7,1.35,1.05,.85][rt.d-1];
   const barTex=stripeTex();
@@ -351,7 +378,7 @@ function update(s,dt){
   if(KEY.j){KEY.j=0;activate(s)}
   if(s.y>0||s.vy>0){s.vy-=24*dt;s.y+=s.vy*dt;s.air+=dt;if(s.flipping)s.flip+=dt*Math.PI*5;
     if(s.y<=0){s.y=0;s.vy=0;const a=s.air;s.air=0;
-      if(s.flipping){s.flipping=false;s.flip=0;const b=Math.round(900+a*1400);s.score+=b;s.limit=Math.min(12,s.limit+3);say('msg',`キックフリップ!<b>+${b.toLocaleString()}</b>`);beep(1200,.15,'triangle')}
+      if(s.flipping){s.flipping=false;s.flip=0;const nm=['キックフリップ!','前転!','コークスクリュー!'][s.trick|0],b=Math.round((900+a*1400)*[1,1.5,1.7][s.trick|0]);s.score+=b;s.limit=Math.min(12,s.limit+3);say('msg',`${nm}<b>+${b.toLocaleString()}</b>`);beep(1200,.15,'triangle')}
       else if(a>.5){const b=Math.round(a*600);s.score+=b;say('msg2','着地 決まったで! +'+b)}}}
   const pz=-s.pos;
   for(const e of w.ents){
@@ -361,7 +388,7 @@ function update(s,dt){
     if(e.fly>0){e.fly-=dt;e.z-=30*dt;e.x+=e.vx*dt;e.m.rotation.x+=dt*8;e.m.position.y+=dt*(e.fly>.5?14:-14);if(e.fly<=0)e.dead=true}
     e.m.position.x=e.x;e.m.position.z=e.z;if(e.fly<=0)e.m.position.y=0;
     const dz=Math.abs(e.z-pz),dx=Math.abs(e.x-s.x);
-    if(e.k==='ramp'){if(!e.used&&dz<2.2&&dx<1.9&&s.y<=.01){e.used=true;s.vy=14;s.air=0;s.flipping=true;s.flip=0}continue}
+    if(e.k==='ramp'){if(!e.used&&dz<2.2&&dx<1.9&&s.y<=.01){e.used=true;s.vy=14;s.air=0;s.flipping=true;s.flip=0;s.trick=(Math.random()*3)|0}continue}
     if(!e.hit&&e.fly===0&&dz<e.hl+.9&&dx<e.hw+.45&&s.y<e.hh){
       if(s.lb>0){e.hit=true;e.fly=.9;e.vx=(e.x>=s.x?1:-1)*14;s.score+=300;say('msg','ぶっとばし!<b>+300</b>');beep(200,.15,'sawtooth')}
       else if(s.inv<=0)crash(s,e)}
@@ -370,7 +397,7 @@ function update(s,dt){
         s.combo++;const b=Math.round(250*(1+Math.min(9,s.combo)*.55)+s.v*2);s.score+=b;if(s.lb<=0)s.limit=Math.min(12,s.limit+1);
         say('msg',`NEAR MISS<b>+${b.toLocaleString()}</b>`);beep(1500,.06,'triangle')}}
   }
-  if(s.lb>0){s.lb-=dt;if(s.lb<=0){s.lb=0;s.limit=0;s.ready=false;$i('fx').classList.remove('on')}}
+  if(s.lb>0){s.lb-=dt;if(s.lb<=0){s.lb=0;s.limit=0;s.ready=false;$i('fx').classList.remove('on');say('big','LIMIT BREAK 終了')}}
   else if(s.limit>=12&&!s.ready){s.ready=true;s.limit=12;say('big','LIMIT 満タン');beep(700,.3,'sawtooth')}
   s.inv=Math.max(0,s.inv-dt);s.flash=Math.max(0,s.flash-dt);s.shake=Math.max(0,s.shake-dt);
   s.score+=s.v*dt*(s.lb>0?2:1)*.8;
@@ -382,7 +409,7 @@ function update(s,dt){
   if(s.S.mode==='survive'&&s.pos>=w.L-60){finish(s,true);return}
   if(s.S.mode==='challenge'){s.time-=dt;if(s.time<=0){s.time=0;finish(s,false)}}
 }
-function activate(s){if(!s||!s.ready||s.lb>0||s.over||s.cd>0)return;s.ready=false;s.lb=6;s.limit=12;$i('fx').classList.add('on');say('big','LIMIT BREAK');beep(900,.3,'sawtooth')}
+function activate(s){if(!s||!s.ready||s.lb>0||s.over||s.cd>0)return;s.ready=false;s.lb=6;s.limit=12;$i('fx').classList.add('on');say('big','LIMIT BREAK');say('msg2','何でもぶっ飛ばせ!');beep(900,.3,'sawtooth')}
 function crash(s,e){
   e.hit=true;s.combo=0;s.v*=.35;s.inv=1.6;s.flash=.4;s.shake=.35;s.limit=Math.max(0,s.limit-3);
   if(e.k==='cone'){e.fly=.8;e.vx=(e.x>=s.x?1:-1)*6}
@@ -412,9 +439,9 @@ $i('bMapBack').onclick=()=>{show('sMap');drawMap()};
 function frame(s,dt){
   const pl=s.pl,u=pl.userData,w=s.w,v=s.S.cam;
   pl.position.set(s.x,s.y,-s.pos);
-  u.body.rotation.z=-s.steer*.22;u.body.rotation.y=-s.steer*.12;
+  u.body.rotation.z=-s.steer*.22;if(!(s.flipping&&(s.trick|0)===2))u.body.rotation.y=-s.steer*.12;
   if(u.legs.length&&s.S.veh!=='car'){const p=Math.sin(s.anim*Math.min(14,s.v/5))*.5*(s.y>0?0:1);u.legs[0].rotation.x=p;u.legs[1].rotation.x=-p*.4}
-  if(u.board&&s.S.veh!=='car')u.board.rotation.z=s.flipping?s.flip:0;
+  if(s.S.veh!=='car'){const f=s.flipping?s.flip:0,t=s.trick|0;u.board.rotation.z=t===0?f:0;u.body.rotation.x=t===1?-f:0;if(t===2)u.body.rotation.y=f;}
   pl.visible=!(v==='fp')&&!(s.inv>0&&Math.floor(s.t*20)%2);
   const cfg=v==='high'?[6.5,10.5,-18]:v==='fp'?[2.0,.2,-30]:[2.6,5.4,-13];
   const sh=s.shake>0?(Math.random()-.5)*.35:0;
