@@ -148,7 +148,7 @@ function addTrees(sc,trees,night,rng){
 
 function cityScenery(sc,o){
   const {Z0,L,night,rng,sts}=o,zEnd=-L-260,ISEC=150,ints=[];
-  for(let z=Z0-70;z>zEnd;z-=ISEC)ints.push(z);
+  for(let z=Z0-170;z>zEnd;z-=ISEC)ints.push(z);
   const inGap=(z0,z1)=>ints.some(c=>z1>c-10&&z0<c+10);
   const gapAt=z=>ints.find(c=>Math.abs(z-c)<10);
   // facades: 4 kinds, 1 shop, 1 plain
@@ -443,7 +443,7 @@ function frame(s,dt){
   if(u.legs.length&&s.S.veh!=='car'){const p=Math.sin(s.anim*Math.min(14,s.v/5))*.5*(s.y>0?0:1);u.legs[0].rotation.x=p;u.legs[1].rotation.x=-p*.4}
   if(s.S.veh!=='car'){const f=s.flipping?s.flip:0,t=s.trick|0;u.board.rotation.z=t===0?f:0;u.body.rotation.x=t===1?-f:0;if(t===2)u.body.rotation.y=f;}
   pl.visible=!(v==='fp')&&!(s.inv>0&&Math.floor(s.t*20)%2);
-  const cfg=v==='high'?[6.5,10.5,-18]:v==='fp'?[2.0,.2,-30]:[2.6,5.4,-13];
+  const cfg=v==='high'?[6.5,10.5,-18]:v==='fp'?[2.0,.2,-30]:[3.0,7.2,-13];
   const sh=s.shake>0?(Math.random()-.5)*.35:0;
   camera.position.set(s.x*.65+sh,cfg[0]+s.y*.5,-s.pos+cfg[1]);
   camera.lookAt(s.x*.8,1.4+s.y*.2,-s.pos+cfg[2]);
