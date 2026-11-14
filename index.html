@@ -630,8 +630,9 @@ function addGuardrail(sc,o){
 
 /* Time design: needed = length / (average speed x 0.9). Each station adds a bonus that shrinks along the route
    (starting value by difficulty). The starting time is what is left to cover the needed time, plus a margin that is thinner on harder routes. */
+const CRU0=62,CRU1=34,DISP=1.45; /* cruise m/s at start / extra at goal; DISP: arcade display scale (original shows 220-500 km/h) */
 function timePlan(rt,L,n,survive){
-  const base=[5.5,5.0,4.5,4.0][rt.d-1],margin=[9,7,5,3.5][rt.d-1],avg=66*.9;
+  const base=[5.5,5.0,4.5,4.0][rt.d-1],margin=[9,7,5,3.5][rt.d-1],avg=(CRU0+CRU1*.5)*.9;
   const add=k=>Math.max(2.5,base-.25*(k-1));
   let sum=0;for(let k=1;k<n;k++)sum+=add(k);
   const need=L/avg,t0=Math.max(16,Math.round((need-sum+margin)*2)/2);
@@ -763,10 +764,10 @@ function update(s,dt){
     if(n<s.cdn&&n>=0){s.cdn=n;const li=$i('light').children;if(n>0){$i('count').textContent=n;for(let i=0;i<3;i++)li[i].className=i<n?'r':'';beep(520,.12)}else{$i('count').textContent='GO!';for(let i=0;i<3;i++)li[i].className='g';beep(900,.3);setTimeout(()=>{$i('light').classList.remove('on');$i('count').textContent=''},800)}}
     s.v=0;return}
   const dir=clamp(KEY.r-KEY.l+touchDir,-1,1),prog=clamp(s.pos/w.L,0,1);
-  const lbm=s.lb>0?1.35:1,cruise=(52+prog*28)*lbm,target=KEY.b?30:cruise;
+  const lbm=s.lb>0?1.35:1,cruise=(CRU0+prog*CRU1)*lbm,target=KEY.b?34:cruise;
   s.v+=(target-s.v)*Math.min(1,dt*(target>s.v?.9:2.2));
   s.steer=lerp(s.steer,dir,Math.min(1,dt*9));
-  s.x+=dir*dt*13*Math.min(1,.4+s.v/60);
+  s.x+=dir*dt*15*Math.min(1,.4+s.v/60);
   if(Math.abs(s.x)>7.3){s.v-=dt*60*Math.sign(s.v);s.x=clamp(s.x,-8.2,8.2)}
   s.v=Math.max(0,s.v);s.pos+=s.v*dt;s.t+=dt;
   // jump / flip
@@ -847,8 +848,8 @@ function frame(s,dt){
 function hud(s){
   const w=s.w,idx=clamp(s.cp,0,w.n-1),g=w.gates[idx];
   $i('hScore').textContent=Math.round(s.score).toLocaleString();
-  $i('hSpd').textContent=Math.round(s.v*3.6);
-  $i('gArc').setAttribute('stroke-dasharray',clamp(s.v/(110*1.35),0,1)*100+' 100');
+  $i('hSpd').textContent=Math.round(s.v*3.6*DISP);
+  $i('gArc').setAttribute('stroke-dasharray',clamp(s.v/(96*1.35),0,1)*100+' 100');
   $i('hLife').textContent=s.S.mode==='time'?'':'♥'.repeat(Math.max(0,s.lives))+'♡'.repeat(Math.max(0,s.max-s.lives));
   $i('hLife').style.display=s.S.mode==='time'?'none':'block';
   const segs=$i('hSeg').children;for(let i=0;i<12;i++)segs[i].className=i<s.limit?'on':'';
