@@ -626,6 +626,15 @@ function addGuardrail(sc,o){
   for(const s of[-1,1]){sc.add(box(.1,.3,ln,0,s*8.2,.75,zc,rl));sc.add(box(.1,.25,ln,0,s*8.2,.35,zc,rl));for(let z=Z0;z>-L-420;z-=8){O.position.set(s*8.3,.45,z);O.updateMatrix();pst.setMatrixAt(i++,O.matrix)}}
   pst.count=i;sc.add(pst)}
 
+/* Time design: needed = length / (average speed x 0.9). Each station adds a bonus that shrinks along the route
+   (starting value by difficulty). The starting time is what is left to cover the needed time, plus a margin that is thinner on harder routes. */
+function timePlan(rt,L,n,survive){
+  const base=[5.5,5.0,4.5,4.0][rt.d-1],margin=[9,7,5,3.5][rt.d-1],avg=66*.9;
+  const add=k=>Math.max(2.5,base-.25*(k-1));
+  let sum=0;for(let k=1;k<n;k++)sum+=add(k);
+  const need=L/avg,t0=Math.max(16,Math.round((need-sum+margin)*2)/2);
+  return {t0,add,need,sum}}
+
 function build(S){
   const rt=S.route,rng=rngMk(S.lay==='fix'?hashS(rt.id):((Math.random()*1e9)|0)+1);
   const tm=S.time==='auto'?rt.tm:S.time,pal=PAL[tm],night=pal.night,th=rt.th;
@@ -712,7 +721,7 @@ function build(S){
     const u=e.m.userData;e.hw=u.hw;e.hl=u.hl;e.hh=u.hh;e.x=e.k==='cone'?lx+(rng()-.5)*.8:(e.k==='ped'?(rng()<.5?-7:7):lx);e.z=z;e.hit=false;e.passed=false;e.fly=0;
     if(e.k==='car'&&rt.d>=4&&rng()<.4)e.merge=e.x<0?-1:1;
     e.m.position.set(e.x,0,e.z);sc.add(e.m);ents.push(e)}
-  return {sc,rt,pal,tm,night,th,L,gates,ents,n,sts,barCol,dust:dl}
+  return {sc,rt,pal,tm,night,th,L,gates,ents,n,sts,barCol,dust:dl,plan:timePlan(rt,L,n)}
 }
 
 function start(S){
@@ -723,7 +732,7 @@ function start(S){
   const w=build(S),total=S.mode==='survive'?3:(S.veh==='car'?4:3);
   scene=w.sc;camera=new THREE.PerspectiveCamera(65,1,.1,900);
   const pl=mkPlayer(S.veh,S.skin);scene.add(pl);
-  const t0=S.mode==='challenge'?Math.round(w.L/92)+(S.mode==='challenge'?4:0):0;
+  const t0=S.mode==='challenge'?w.plan.t0:0;
   st={w,S,pl,pos:0,x:0,v:0,y:0,vy:0,air:0,flip:0,flipping:false,lives:total,max:total,score:0,t:0,time:t0,limit:0,lb:0,inv:0,combo:0,cd:3.6,cdn:4,cp:1,ready:false,over:false,paused:false,flash:0,pen:0,steer:0,anim:0,shake:0,hit:0};
   resize();
   $i('over').classList.remove('on');$i('bAgain').textContent='もう一度';
@@ -787,7 +796,7 @@ function update(s,dt){
   // stations / goal
   const m=w.rt.id==='yamanote'||true;
   while(s.cp<w.n&&-pz>=-w.gates[s.cp].z){const g=w.gates[s.cp];
-    if(s.cp<w.n-1){const add=s.S.mode==='challenge'?3:0;s.time+=add;s.score+=500;say('big',g.s.n);beep(880,.1,'triangle');s.cp++}
+    if(s.cp<w.n-1){const add=s.S.mode==='challenge'?w.plan.add(s.cp):0;s.time+=add;s.score+=500;if(add){s.pen=1.4;s.penTxt='+'+add.toFixed(1)+'秒'}say('big',g.s.n);beep(880,.1,'triangle');s.cp++}
     else{finish(s,true);return}}
   if(s.S.mode==='survive'&&s.pos>=w.L-60){finish(s,true);return}
   if(s.S.mode==='challenge'){s.time-=dt;if(s.time<=0){s.time=0;finish(s,false)}}
@@ -797,7 +806,7 @@ function crash(s,e){
   e.hit=true;s.combo=0;s.v*=.35;s.inv=1.6;s.flash=.4;s.shake=.35;s.limit=Math.max(0,s.limit-3);
   if(e.k==='cone'){e.fly=.8;e.vx=(e.x>=s.x?1:-1)*6}
   beep(120,.25,'sawtooth');
-  if(s.S.mode==='challenge'){s.time=Math.max(0,s.time-.5);s.pen=1.2}
+  if(s.S.mode==='challenge'){s.time=Math.max(0,s.time-.5);s.pen=1.2;s.penTxt='-0.5秒'}
   if(s.S.mode!=='time'){s.lives--;say('hb','💔');
     if(s.lives<=0){finish(s,false);return}
     say('msg',`激突! 残りライフ <b>${s.lives}</b>`)}
@@ -848,7 +857,7 @@ function hud(s){
     $i('hNext').textContent=g.s.n;$i('hJy').textContent=g.s.c||('GATE'+(idx+1));$i('hDist').textContent=Math.max(0,Math.round(-g.z-s.pos))+'m';$i('hProg').style.width=clamp((s.pos-prevZ)/span,0,1)*100+'%'}
   $i('hTime').textContent=s.S.mode==='challenge'?s.time.toFixed(1):s.S.mode==='time'?s.t.toFixed(2):Math.round(s.pos/10)/10+'';
   $i('hTimeLbl').textContent=s.S.mode==='challenge'?(LABEL[w.rt.id]||'残り時間'):s.S.mode==='time'?'タイム':'距離';
-  if(s.pen>0){s.pen-=.016;$i('hPen').textContent='-0.5秒'}else $i('hPen').textContent='';
+  if(s.pen>0){s.pen-=.016;$i('hPen').textContent=s.penTxt||'';$i('hPen').style.color=(s.penTxt||'')[0]==='+'?'#31d6a0':'#ff4d4d'}else $i('hPen').textContent='';
 }
 addEventListener('keydown',e=>{if(!st)return;const k=e.key;
   if(k==='ArrowLeft'||k==='a'||k==='A')KEY.l=1;else if(k==='ArrowRight'||k==='d'||k==='D')KEY.r=1;
