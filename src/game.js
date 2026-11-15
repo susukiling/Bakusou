@@ -464,13 +464,15 @@ function update(s,dt){
   // stations / goal
   const m=w.rt.id==='yamanote'||true;
   while(s.cp<w.n&&-pz>=-w.gates[s.cp].z){const g=w.gates[s.cp];
-    if(s.cp<w.n-1){const add=s.S.mode==='challenge'?w.plan.add(s.cp):0;s.time+=add;s.score+=500;if(add){s.pen=1.4;s.penTxt='+'+add.toFixed(1)+'秒'}say('big',g.s.n);beep(880,.1,'triangle');s.cp++}
+    if(s.cp<w.n-1){const add=s.S.mode==='challenge'?w.plan.add(s.cp):0;s.time+=add;s.score+=500;if(add){s.pen=1.4;s.penTxt='+'+add.toFixed(1)+'秒'}if(s.S.mode!=='time'&&s.lives<s.max){s.lives++;say('msg2','ライフ回復 ♥')}say('big',g.s.n);beep(880,.1,'triangle');s.cp++}
     else{finish(s,true);return}}
   if(s.S.mode==='survive'&&s.pos>=w.L-60){finish(s,true);return}
   if(s.S.mode==='challenge'){s.time-=dt;if(s.time<=0){s.time=0;finish(s,false)}}
 }
 function activate(s){if(!s||!s.ready||s.lb>0||s.over||s.cd>0)return;s.ready=false;s.lb=6;s.limit=12;$i('fx').classList.add('on');say('big','LIMIT BREAK');say('msg2','何でもぶっ飛ばせ!');beep(900,.3,'sawtooth')}
 function crash(s,e){
+  // original rule: cones and barricades are smashed for LIMIT gauge (no life lost); cars and trucks cost a life
+  if(e.k==='cone'||e.k==='barrier'){e.hit=true;e.fly=.8;e.vx=(e.x>=s.x?1:-1)*7;s.v*=.9;s.score+=200;s.limit=Math.min(12,s.limit+(e.k==='barrier'?3:2));say('msg','ぶっ飛ばし! LIMIT UP<b>+200</b>');beep(260,.12,'square');return}
   e.hit=true;s.combo=0;s.v*=.35;s.inv=1.6;s.flash=.4;s.shake=.35;s.limit=Math.max(0,s.limit-3);
   if(e.k==='cone'){e.fly=.8;e.vx=(e.x>=s.x?1:-1)*6}
   beep(120,.25,'sawtooth');
