@@ -296,19 +296,28 @@ function addGuardrail(sc,o){
 /* Time design: needed = length / (average speed x 0.9). Each station adds a bonus that shrinks along the route
    (starting value by difficulty). The starting time is what is left to cover the needed time, plus a margin that is thinner on harder routes. */
 const CRU0=62,CRU1=34,DISP=1.45; /* cruise m/s at start / extra at goal; DISP: arcade display scale (original shows 220-500 km/h) */
-function timePlan(rt,L,n,survive){
-  const base=[5.5,5.0,4.5,4.0][rt.d-1],margin=[9,7,5,3.5][rt.d-1],avg=(CRU0+CRU1*.5)*.9;
-  const add=k=>Math.max(2.5,base-.25*(k-1));
-  let sum=0;for(let k=1;k<n;k++)sum+=add(k);
-  const need=L/avg,t0=Math.max(16,Math.round((need-sum+margin)*2)/2);
-  return {t0,add,need,sum}}
+function timePlan(rt,dist,n){
+  /* Time to reach the next gate = gap / (cruise speed x .88) + slack. Start time covers the first gap plus a margin; every gate adds the next gap's time.
+     Margin and slack get thinner on harder courses. */
+  const L=dist[n-1],margin=[8,6,4.5,3.2][rt.d-1],slack=[3,2.2,1.5,.9][rt.d-1];
+  const spd=z=>(CRU0+CRU1*clamp(z/L,0,1))*.88;
+  const need=k=>{const a=dist[k-1],b=dist[k];return (b-a)/spd((a+b)/2)};
+  const t0=Math.max(12,Math.round((need(1)+margin)*2)/2);
+  const add=k=>Math.round((need(Math.min(k+1,n-1))+slack)*2)/2;
+  let tot=0;for(let k=1;k<n;k++)tot+=need(k);
+  return {t0,add,need:tot,L}}
 
 function build(S){
   const rt=S.route,rng=rngMk(S.lay==='fix'?hashS(rt.id):((Math.random()*1e9)|0)+1);
   const tm=S.time==='auto'?rt.tm:S.time,pal=PAL[tm],night=pal.night,th=rt.th;
   const sts=rt.st,n=sts.length;
-  const L=S.mode==='survive'?6000:(rt.id==='yamanote'?2640:Math.max(1500,1200+rt.d*450+n*60));
-  const gdist=k=>L*k/(n-1);
+  /* Gate spacing comes from the real distance between stops. Story courses keep the real scale (1:1);
+     long roads are compressed (x0.07) and each gap is kept between 420 m and 1100 m so every IC/JCT stays playable. */
+  const story=rt.t==='area',F=story?1:.07,GMIN=420,GMAX=story?1800:1100,dist=[0];
+  for(let k=1;k<n;k++){const real=(rt.gk?rt.gk[k]-rt.gk[k-1]:rt.km/(n-1))*1000;dist.push(dist[k-1]+(S.mode==='survive'?6000/(n-1):clamp(real*F,GMIN,GMAX)))}
+  if(S.mode!=='survive'&&dist[n-1]<3500){const f=3500/dist[n-1];for(let k=1;k<n;k++)dist[k]*=f}
+  const L=dist[n-1];
+  const gdist=k=>dist[k];
   const sc=new THREE.Scene();sc.background=skyTex(pal);sc.fog=new THREE.Fog(pal.fog,night?60:90,night?420:620);
   sc.add(new THREE.HemisphereLight(night?'#7080b0':'#ffffff',night?'#101420':'#8a9099',pal.amb*(night?1.1:1.3)));
   const dl=new THREE.DirectionalLight(night?'#aab8ff':'#fff2dd',pal.sun);dl.position.set(-30,60,20);sc.add(dl);
@@ -395,7 +404,7 @@ function build(S){
       const others=lanes.filter(l=>Math.abs(l-e.x)>2),lx2=others[(rng()*others.length)|0];
       const g2=new THREE.Group();g2.add(box(.7,.1,.7,0,0,.05,0,M('#222')));const c2=new THREE.Mesh(new THREE.ConeGeometry(.3,.85,8),M('#ff6a1a'));c2.position.y=.55;g2.add(c2);g2.add(box(.36,.1,.36,0,0,.55,0,M('#fff')));g2.userData={hw:.4,hl:.4,hh:.9};
       const e2={m:g2,k:'cone',hw:.4,hl:.4,hh:.9,x:lx2,z:z-1.5,hit:false,passed:false,fly:0};e2.m.position.set(e2.x,0,e2.z);sc.add(e2.m);ents.push(e2)}}
-  return {sc,rt,pal,tm,night,th,L,gates,ents,n,sts,barCol,dust:dl,plan:timePlan(rt,L,n)}
+  return {sc,rt,pal,tm,night,th,L,gates,ents,n,sts,barCol,dust:dl,plan:timePlan(rt,dist,n)}
 }
 
 function start(S){
@@ -450,6 +459,7 @@ function update(s,dt){
   const pz=-s.pos;
   for(const e of w.ents){
     if(e.dead)continue;
+    if(e.m){const vis=Math.abs(e.z-pz)<700;if(e.m.visible!==vis)e.m.visible=vis;if(!vis)continue}
     if(e.k==='car'||e.k==='truck'){if(!e.hit||e.fly===0)e.z-=e.sp*dt;if(e.merge&&e.z>pz-150){const tx=e.merge<0?-3.6:3.6;e.x+=Math.sign(tx-e.x)*Math.min(Math.abs(tx-e.x),3*dt)}}
     if(e.k==='ped'){e.x+=e.dir*2.2*dt;if(Math.abs(e.x)>8.5)e.dir*=-1;e.m.rotation.y=e.dir>0?-1.57:1.57}
     if(e.fly>0){e.fly-=dt;e.z-=30*dt;e.x+=e.vx*dt;e.m.rotation.x+=dt*8;e.m.position.y+=dt*(e.fly>.5?14:-14);if(e.fly<=0)e.dead=true}

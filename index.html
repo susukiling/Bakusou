@@ -308,6 +308,22 @@ R.push(
 R.sort((a,b)=>(b.t==='area')-(a.t==='area'));
 R.forEach(r=>{if(!r.th)r.th=['aqua','seto','shimanami'].includes(r.id)?'sea':['hakoneTP','izuSky','kanetsu','meishin','r9','kyushu'].includes(r.id)?'mtn':['shutoko','hanshin','r1','r246','tomei','r17','r2'].includes(r.id)?'city':'plain';
   if(!r.st)r.st=r.v.map(k=>J(C[k][2],'',C[k][2],''));});
+
+/* 実在するIC・JCTを全て出す(スマートIC・SA/PAは除く)。[名前, 起点からのkm] ─ 出典: 各路線のIC/JCT一覧(Wikipedia等) */
+const HWX={
+ tomei:{s:'東京→小牧',p:[['東京IC',0],['東名川崎IC',7.6],['横浜青葉IC',13.3],['横浜町田IC',19.7],['海老名JCT',33.9],['厚木IC',35.0],['伊勢原JCT',40.0],['秦野中井IC',50.1],['大井松田IC',57.9],['御殿場IC',83.7],['御殿場JCT',88.3],['裾野IC',93.8],['沼津IC',103.3],['富士IC',121.5],['清水JCT',146.4],['清水IC',147.8],['静岡IC',161.8],['焼津IC',173.6],['吉田IC',185.6],['相良牧之原IC',197.0],['菊川IC',201.8],['掛川IC',207.8],['袋井IC',219.4],['磐田IC',223.3],['浜松IC',230.0],['浜松西IC',240.5],['三ヶ日IC',251.1],['三ヶ日JCT',255.8],['豊川IC',269.0],['音羽蒲郡IC',280.2],['岡崎IC',293.4],['豊田JCT',304.1],['豊田IC',310.8],['東名三好IC',315.8],['日進JCT',322.3],['名古屋IC',325.5],['春日井IC',337.7],['小牧JCT',339.9],['小牧IC',346.8]]},
+ meishin:{s:'小牧→西宮',p:[['小牧IC',0],['一宮IC',8.3],['一宮JCT',12.7],['岐阜羽島IC',21.4],['大垣IC',28.2],['養老JCT',31.8],['関ヶ原IC',42.7],['米原JCT',58.8],['彦根IC',66.7],['八日市IC',87.9],['竜王IC',100.5],['栗東湖南IC',110.3],['栗東IC',111.5],['草津JCT',117.7],['瀬田東JCT',120.8],['瀬田西IC',122.3],['大津IC',127.9],['京都東IC',131.2],['京都南IC',140.9],['大山崎JCT',149.0],['高槻JCT',157.3],['茨木IC',165.0],['吹田JCT',167.8],['豊中IC',177.8],['尼崎IC',182.7],['西宮IC',189.5]]},
+ tohoku:{s:'川口→青森',p:[['川口JCT',0],['浦和IC',3.2],['岩槻IC',10.5],['久喜IC',25.5],['加須IC',33.4],['羽生IC',39.4],['館林IC',46.0],['佐野藤岡IC',55.0],['栃木IC',72.7],['栃木都賀JCT',75.4],['鹿沼IC',91.5],['宇都宮IC',103.0],['矢板IC',120.2],['西那須野塩原IC',139.1],['那須IC',152.5],['白河IC',169.7],['矢吹IC',186.3],['須賀川IC',198.2],['郡山南IC',207.7],['郡山IC',216.4],['郡山JCT',220.2],['本宮IC',223.1],['二本松IC',236.0],['福島西IC',254.9],['福島飯坂IC',264.9],['国見IC',276.0],['白石IC',299.5],['村田IC',311.8],['村田JCT',314.5],['仙台南IC',326.8],['仙台宮城IC',332.4],['泉IC',346.1],['富谷JCT',349.3],['大和IC',357.1],['古川IC',375.1],['築館IC',391.2],['若柳金成IC',403.0],['一関IC',420.3],['平泉前沢IC',431.8],['水沢IC',449.3],['北上金ケ崎IC',458.0],['北上JCT',461.8],['北上江釣子IC',464.7],['花巻南IC',474.5],['花巻JCT',478.6],['花巻IC',481.3],['紫波IC',494.1],['盛岡南IC',505.1],['盛岡IC',512.1],['滝沢IC',522.1],['西根IC',532.2],['松尾八幡平IC',541.7],['安代JCT',563.3],['安代IC',564.6],['鹿角八幡平IC',590.7],['十和田IC',602.6],['小坂IC',610.7],['碇ヶ関IC',630.7],['大鰐弘前IC',643.7],['黒石IC',653.6],['浪岡IC',667.6],['青森IC',679.5]]},
+ kanetsu:{s:'練馬→長岡',p:[['練馬IC',0],['大泉JCT',0.8],['所沢IC',9.4],['川越IC',21.2],['鶴ヶ島JCT',27.8],['鶴ヶ島IC',29.6],['東松山IC',39.4],['嵐山小川IC',47.4],['花園IC',56.1],['本庄児玉IC',69.6],['藤岡JCT',78.6],['高崎JCT',84.6],['高崎IC',87.0],['前橋IC',92.1],['渋川伊香保IC',103.4],['赤城IC',111.2],['昭和IC',120.6],['沼田IC',125.8],['月夜野IC',131.1],['水上IC',141.0],['湯沢IC',167.0],['塩沢石打IC',175.5],['六日町IC',186.9],['魚沼IC',204.4],['堀之内IC',212.1],['越後川口IC',220.9],['小千谷IC',228.8],['長岡IC',244.5],['長岡JCT',246.1]]},
+ sanyo:{s:'神戸→山口',p:[['神戸JCT',0],['神戸北IC',2.6],['三木JCT',15.4],['三木東IC',18.0],['三木小野IC',27.7],['加古川北IC',41.2],['山陽姫路東IC',49.8],['山陽姫路西IC',62.7],['龍野IC',69.3],['龍野西IC',73.7],['播磨JCT',74.7],['赤穂IC',88.3],['備前IC',98.8],['和気IC',109.1],['山陽IC',123.2],['岡山IC',136.8],['岡山JCT',143.9],['倉敷JCT',150.3],['倉敷IC',152.4],['玉島IC',161.9],['鴨方IC',171.9],['笠岡IC',180.1],['福山東IC',191.7],['福山西IC',208.6],['尾道JCT',213.1],['尾道IC',214.5],['三原久井IC',227.2],['本郷IC',238.5],['河内IC',246.7],['高屋JCT',252.8],['西条IC',257.8],['志和IC',268.8],['広島東IC',279.2],['広島IC',285.6],['広島JCT',293.1],['五日市IC',296.1],['廿日市JCT',310.4],['大野IC',315.1],['大竹IC',323.4],['岩国IC',332.6],['玖珂IC',346.7],['熊毛IC',358.9],['徳山東IC',370.7],['徳山西IC',388.7],['防府東IC',401.3],['防府西IC',404.6],['山口南IC',413.2],['山口JCT',419.3]]},
+ kyushu:{s:'北九州→鹿児島',p:[['北九州JCT',0],['小倉南IC',3.7],['八幡IC',14.9],['鞍手IC',19.6],['若宮IC',28.7],['古賀IC',41.2],['福岡IC',51.8],['太宰府IC',63.6],['筑紫野IC',70.4],['鳥栖JCT',79.6],['久留米IC',88.9],['広川IC',96.7],['八女IC',101.9],['みやま柳川IC',109.1],['南関IC',118.5],['菊水IC',130.1],['植木IC',140.8],['熊本IC',154.7],['益城熊本空港IC',159.9],['嘉島JCT',164.2],['御船IC',166.6],['松橋IC',178.6],['八代IC',197.0],['八代JCT',198.1],['人吉IC',235.5],['えびのIC',257.8],['えびのJCT',259.9],['栗野IC',273.5],['横川IC',279.5],['溝辺鹿児島空港IC',293.3],['加治木JCT',301.0],['姶良IC',309.7],['薩摩吉田IC',318.3],['鹿児島北IC',325.4],['鹿児島IC',329.7]]},
+ doo:{s:'大沼公園→札幌',p:[['大沼公園IC',0],['森IC',9.7],['落部IC',29.9],['八雲IC',45.9],['国縫IC',67.6],['長万部IC',78.7],['黒松内JCT',94.3],['豊浦IC',112.5],['虻田洞爺湖IC',125.7],['伊達IC',139.3],['室蘭IC',152.2],['登別室蘭IC',161.8],['登別東IC',173.2],['白老IC',191.8],['苫小牧西IC',207.6],['苫小牧東IC',225.2],['新千歳空港IC',233.1],['千歳IC',237.1],['千歳恵庭JCT',242.1],['恵庭IC',246.1],['北広島IC',260.0],['札幌南IC',264.5],['大谷地IC',268.3],['北郷IC',270.3],['札幌JCT',271.9],['札幌IC',272.4]]},
+ shutoko:{s:'羽田→石川町',p:[['羽田',0],['大師',0.7],['浜川崎',4.5],['浅田',6.4],['汐入',7.4],['生麦JCT',9.1],['生麦',9.7],['守屋町',10.6],['子安',10.8],['東神奈川',12.6],['金港JCT',14.0],['横浜駅東口',14.1],['みなとみらい',15.3],['横浜公園',19.0],['石川町JCT',19.7]]},
+ hanshin:{s:'阿波座→月見山',p:[['阿波座JCT',0],['西長堀',0.3],['中之島西',0.9],['海老江JCT',3.2],['姫島',4.2],['大和田',5.1],['尼崎東',7.0],['尼崎西',10.7],['武庫川',11.9],['西宮JCT',14.5],['西宮',16.8],['芦屋',17.4],['深江',21.4],['魚崎',22.7],['摩耶JCT',27.3],['生田川',29.6],['京橋JCT',30.8],['柳原JCT',34.2],['湊川JCT',36.1],['若宮',38.1],['月見山',39.4]]}
+};
+R.forEach(r=>{const h=HWX[r.id];if(!h)return;const p=h.p;r.st=p.map(q=>J(q[0],'',q[0],''));r.gk=p.map(q=>q[1]-p[0][1]);r.km=Math.round(r.gk[r.gk.length-1]);r.s=h.s});
+/* 山手線(東京→渋谷)の駅間の実距離 */
+R.forEach(r=>{if(r.id==='yamanote'){r.gk=[0,.8,1.9,3.1,4.6,5.9,6.8,8.8,9.7,10.9,12.4,14.0];r.km=14}});
 R.forEach(r=>{r.pts=r.v.map(k=>proj(C[k][0],C[k][1]))});
 const MODES=[
  {id:'challenge',en:'CHALLENGE',n:'チャレンジ',x:'制限時間内にゴールをめざす。チェックポイントを通過すると残り時間が延びる。スコアとライフあり。'},
@@ -662,19 +678,28 @@ function addGuardrail(sc,o){
 /* Time design: needed = length / (average speed x 0.9). Each station adds a bonus that shrinks along the route
    (starting value by difficulty). The starting time is what is left to cover the needed time, plus a margin that is thinner on harder routes. */
 const CRU0=62,CRU1=34,DISP=1.45; /* cruise m/s at start / extra at goal; DISP: arcade display scale (original shows 220-500 km/h) */
-function timePlan(rt,L,n,survive){
-  const base=[5.5,5.0,4.5,4.0][rt.d-1],margin=[9,7,5,3.5][rt.d-1],avg=(CRU0+CRU1*.5)*.9;
-  const add=k=>Math.max(2.5,base-.25*(k-1));
-  let sum=0;for(let k=1;k<n;k++)sum+=add(k);
-  const need=L/avg,t0=Math.max(16,Math.round((need-sum+margin)*2)/2);
-  return {t0,add,need,sum}}
+function timePlan(rt,dist,n){
+  /* Time to reach the next gate = gap / (cruise speed x .88) + slack. Start time covers the first gap plus a margin; every gate adds the next gap's time.
+     Margin and slack get thinner on harder courses. */
+  const L=dist[n-1],margin=[8,6,4.5,3.2][rt.d-1],slack=[3,2.2,1.5,.9][rt.d-1];
+  const spd=z=>(CRU0+CRU1*clamp(z/L,0,1))*.88;
+  const need=k=>{const a=dist[k-1],b=dist[k];return (b-a)/spd((a+b)/2)};
+  const t0=Math.max(12,Math.round((need(1)+margin)*2)/2);
+  const add=k=>Math.round((need(Math.min(k+1,n-1))+slack)*2)/2;
+  let tot=0;for(let k=1;k<n;k++)tot+=need(k);
+  return {t0,add,need:tot,L}}
 
 function build(S){
   const rt=S.route,rng=rngMk(S.lay==='fix'?hashS(rt.id):((Math.random()*1e9)|0)+1);
   const tm=S.time==='auto'?rt.tm:S.time,pal=PAL[tm],night=pal.night,th=rt.th;
   const sts=rt.st,n=sts.length;
-  const L=S.mode==='survive'?6000:(rt.id==='yamanote'?2640:Math.max(1500,1200+rt.d*450+n*60));
-  const gdist=k=>L*k/(n-1);
+  /* Gate spacing comes from the real distance between stops. Story courses keep the real scale (1:1);
+     long roads are compressed (x0.07) and each gap is kept between 420 m and 1100 m so every IC/JCT stays playable. */
+  const story=rt.t==='area',F=story?1:.07,GMIN=420,GMAX=story?1800:1100,dist=[0];
+  for(let k=1;k<n;k++){const real=(rt.gk?rt.gk[k]-rt.gk[k-1]:rt.km/(n-1))*1000;dist.push(dist[k-1]+(S.mode==='survive'?6000/(n-1):clamp(real*F,GMIN,GMAX)))}
+  if(S.mode!=='survive'&&dist[n-1]<3500){const f=3500/dist[n-1];for(let k=1;k<n;k++)dist[k]*=f}
+  const L=dist[n-1];
+  const gdist=k=>dist[k];
   const sc=new THREE.Scene();sc.background=skyTex(pal);sc.fog=new THREE.Fog(pal.fog,night?60:90,night?420:620);
   sc.add(new THREE.HemisphereLight(night?'#7080b0':'#ffffff',night?'#101420':'#8a9099',pal.amb*(night?1.1:1.3)));
   const dl=new THREE.DirectionalLight(night?'#aab8ff':'#fff2dd',pal.sun);dl.position.set(-30,60,20);sc.add(dl);
@@ -761,7 +786,7 @@ function build(S){
       const others=lanes.filter(l=>Math.abs(l-e.x)>2),lx2=others[(rng()*others.length)|0];
       const g2=new THREE.Group();g2.add(box(.7,.1,.7,0,0,.05,0,M('#222')));const c2=new THREE.Mesh(new THREE.ConeGeometry(.3,.85,8),M('#ff6a1a'));c2.position.y=.55;g2.add(c2);g2.add(box(.36,.1,.36,0,0,.55,0,M('#fff')));g2.userData={hw:.4,hl:.4,hh:.9};
       const e2={m:g2,k:'cone',hw:.4,hl:.4,hh:.9,x:lx2,z:z-1.5,hit:false,passed:false,fly:0};e2.m.position.set(e2.x,0,e2.z);sc.add(e2.m);ents.push(e2)}}
-  return {sc,rt,pal,tm,night,th,L,gates,ents,n,sts,barCol,dust:dl,plan:timePlan(rt,L,n)}
+  return {sc,rt,pal,tm,night,th,L,gates,ents,n,sts,barCol,dust:dl,plan:timePlan(rt,dist,n)}
 }
 
 function start(S){
@@ -816,6 +841,7 @@ function update(s,dt){
   const pz=-s.pos;
   for(const e of w.ents){
     if(e.dead)continue;
+    if(e.m){const vis=Math.abs(e.z-pz)<700;if(e.m.visible!==vis)e.m.visible=vis;if(!vis)continue}
     if(e.k==='car'||e.k==='truck'){if(!e.hit||e.fly===0)e.z-=e.sp*dt;if(e.merge&&e.z>pz-150){const tx=e.merge<0?-3.6:3.6;e.x+=Math.sign(tx-e.x)*Math.min(Math.abs(tx-e.x),3*dt)}}
     if(e.k==='ped'){e.x+=e.dir*2.2*dt;if(Math.abs(e.x)>8.5)e.dir*=-1;e.m.rotation.y=e.dir>0?-1.57:1.57}
     if(e.fly>0){e.fly-=dt;e.z-=30*dt;e.x+=e.vx*dt;e.m.rotation.x+=dt*8;e.m.position.y+=dt*(e.fly>.5?14:-14);if(e.fly<=0)e.dead=true}
